@@ -1,14 +1,19 @@
 ﻿using IdentityModel.Client;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Json;
 using System;
+using System.IO;
 using System.Net.Http;
-using System.Text.Json;
 using System.Threading.Tasks;
-using static IdentityModel.OidcConstants;
 
 namespace Caplient_CLI
 {
     internal class Program
     {
+        private static IConfiguration configuration = new ConfigurationBuilder()
+        .AddJsonFile(Path.GetFullPath("..\\..\\appsettings.json")) //TODO изменить путь если есть необходимость
+        .Build();
+
         static void Main(string[] args)
         {
 
@@ -17,10 +22,11 @@ namespace Caplient_CLI
 
             Console.WriteLine("FINISH");
             Console.ReadLine();
-
-
         }
 
+        /// <summary>
+        /// Главный метод для выполнения операций с Capibara.
+        /// </summary>
         static async Task CapibaraMain()
         {
             Console.WriteLine("Send request");
@@ -29,17 +35,20 @@ namespace Caplient_CLI
             var disco = await GetDiscovery(client);
             Console.WriteLine(disco.UserInfoEndpoint);
             string token = await GetToken(client, disco);
-            //string token = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjI4NTg3RTAwQzI2REIwQTEyRDAxQkNBM0M3NDkxNTI0IiwidHlwIjoiYXQrand0In0.eyJpc3MiOiJodHRwczovL2xvY2FsaG9zdDo1MDAxIiwibmJmIjoxNjg4NzI3OTE0LCJpYXQiOjE2ODg3Mjc5MTQsImV4cCI6MTY4ODczMTUxNCwic2NvcGUiOlsiQ2FwaWJhckFQSSJdLCJjbGllbnRfaWQiOiJjbGllbnQiLCJqdGkiOiJGNDE4RUIyMzQwQTVDQzEyQjM0MjlBQjdDOEU2RTcxNiJ9.n8AHi_5NhFmTwarvUyhxtJREY_uNxJesZnX_o66_sRtVODhPwFr3rb6DK9_ZPggbjEELHvcw7ginRg3FTmCk3ey-3YorUbZgBNRQb-KOBF7uxT6iHPaOQVBIlLWaEPGYA2BfgC9zjyTB_9bNp9HDTNECb1gftv9MVFRTO3PY64y7WAdy70iKRwOz399cSXoH7xEHzd9fbUyk2c4tO7pa5IK7kc5N-Rj30g9Ru_8o2Ros4xKIjo7tzrjXbLy9H5tHAZPmnufUL9DaDeQT0Voam4BiOfrIrjclICkiCfjMxPbrW0J5sXdvBJ0GVimVa_yrZEoeZ4f7uqNu1suNRFR-Ag";
 
-            Console.WriteLine("TOKEN IS: "+token);
+            Console.WriteLine("TOKEN IS: " + token);
 
             await CallApi(client, token);
-
         }
 
+        /// <summary>
+        /// Получение документа открытия (discovery document) для IdentityServer.
+        /// </summary>
+        /// <param name="client">HttpClient для отправки запросов.</param>
+        /// <returns>Ответ от документа открытия (discovery document).</returns>
         static async Task<DiscoveryDocumentResponse> GetDiscovery(HttpClient client)
         {
-            var disco = await client.GetDiscoveryDocumentAsync("https://localhost:5001");
+            var disco = await client.GetDiscoveryDocumentAsync(configuration.GetValue<string>("IdentitiServerUrl"));
             if (disco.IsError)
             {
                 Console.WriteLine(disco.Error);
@@ -48,9 +57,15 @@ namespace Caplient_CLI
             return disco;
         }
 
+        /// <summary>
+        /// Получение токена доступа от IdentityServer.
+        /// </summary>
+        /// <param name="client">HttpClient для отправки запросов.</param>
+        /// <param name="discovery">Документ открытия (discovery document) для IdentityServer.</param>
+        /// <returns>Токен доступа.</returns>
         static async Task<string> GetToken(HttpClient client, DiscoveryDocumentResponse discovery)
         {
-            // request token
+            // Запрос токена
             var tokenResponse = await client.RequestClientCredentialsTokenAsync(new ClientCredentialsTokenRequest
             {
                 Address = discovery.TokenEndpoint,
@@ -65,19 +80,20 @@ namespace Caplient_CLI
                 Console.WriteLine(tokenResponse.Error);
                 throw new Exception(tokenResponse.Error);
             }
-            Console.WriteLine("Refresh token is"+tokenResponse.RefreshToken);
             return tokenResponse.AccessToken;
         }
 
-
+        /// <summary>
+        /// Вызов API с использованием токена доступа.
+        /// </summary>
+        /// <param name="client">HttpClient для отправки запросов.</param>
+        /// <param name="token">Токен доступа.</param>
         static async Task CallApi(HttpClient client, string token)
         {
-
-
-            // call api
+            // Вызов API
             client.SetBearerToken(token);
 
-            var response = await client.GetAsync("https://localhost:7162/Capibaras");
+            var response = await client.GetAsync(configuration.GetValue<string>("ApiServerUrl") + "/Capibaras");
             if (!response.IsSuccessStatusCode)
             {
                 Console.WriteLine(response.StatusCode);

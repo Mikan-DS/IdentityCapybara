@@ -4,63 +4,65 @@ namespace IdentityTest4
 {
     public static class Config
     {
+        /// <summary>
+        /// Возвращает список идентификационных ресурсов.
+        /// </summary>
         public static IEnumerable<IdentityResource> IdentityResources =>
             new IdentityResource[]
             {
             new IdentityResources.OpenId()
             };
 
+        /// <summary>
+        /// Возвращает список областей API.
+        /// </summary>
         public static IEnumerable<ApiScope> ApiScopes =>
             new ApiScope[]
-                {
-                
-                    new ApiScope("CapibarAPI"),
-                    new ApiScope("AdminAPI"),
-                
-                };
+            {
+            new ApiScope("CapibarAPI"),
+            new ApiScope("AdminAPI")
+            };
 
+        /// <summary>
+        /// Возвращает список клиентов, имеющих доступ к API.
+        /// </summary>
         public static IEnumerable<Client> Clients =>
             new Client[]
+            {
+                new Client
                 {
+                    ClientId = "client",
+                
+                    // Нет интерактивного пользователя, аутентификация выполняется с помощью идентификатора клиента и секретного ключа
+                    AllowedGrantTypes = GrantTypes.ClientCredentials,
 
-                    new Client(){
+                    // Секретный ключ для аутентификации
+                    ClientSecrets =
+                    {
+                        new Secret("secret".Sha256())
+                    },
 
-                             ClientId = "client",
+                    // Области, к которым у клиента есть доступ
+                    AllowedScopes = { "CapibarAPI", "AdminAPI" }
+                },
 
-                            // no interactive user, use the clientid/secret for authentication
-                            AllowedGrantTypes = GrantTypes.ClientCredentials,
+                new Client
+                {
+                    ClientId = "nocapy",
 
-                            // secret for authentication
-                            ClientSecrets =
-                            {
-                                new Secret("secret".Sha256())
-                            },
+                    // Нет интерактивного пользователя, аутентификация выполняется с помощью идентификатора клиента и секретного ключа
+                    AllowedGrantTypes = GrantTypes.ClientCredentials,
 
-                            // scopes that client has access to
-                            AllowedScopes = { "CapibarAPI", "AdminAPI" }
+                    // Секретный ключ для аутентификации
+                    ClientSecrets =
+                    {
+                        new Secret("secret".Sha256())
+                    },
 
-                        },
-
-                    new Client(){
-
-                             ClientId = "nocapy",
-
-                            // no interactive user, use the clientid/secret for authentication
-                            AllowedGrantTypes = GrantTypes.ClientCredentials,
-
-                            // secret for authentication
-                            ClientSecrets =
-                            {
-                                new Secret("secret".Sha256())
-                            },
-
-                            // scopes that client has access to
-                            AllowedScopes = { "AdminAPI" }
-
-                        }
-
-
-
-                };
+                    // Области, к которым у клиента есть доступ
+                    AllowedScopes = { "AdminAPI" }
+                }
+            };
     }
+
 }
