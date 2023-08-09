@@ -21,19 +21,25 @@ namespace IdentityByCertificate.Controllers
 
 
         [HttpPost]
-        public IActionResult Certificate([FromHeader] string clientId, [FromHeader] string x509Certificate) // Не уверен как лучше передавать сертификаты
+        public IActionResult Certificate() // Не уверен как лучше передавать сертификаты
         {
-            if (string.IsNullOrWhiteSpace(clientId))
+
+            //this.HttpContext.i
+
+            string? clientId = this.HttpContext.Items["username"] as string;
+            X509Certificate2? certificate = this.HttpContext.Items["x509_certificate"] as X509Certificate2;
+
+
+
+            if (string.IsNullOrWhiteSpace(clientId)) // Возможно в этом уже нет необходимости
             {
                 return BadRequest("Идентификатор пользователя не может быть пустым.");
             }
-            if (string.IsNullOrWhiteSpace(x509Certificate))
+            if (certificate == null)
             {
                 return BadRequest("Сертификат не может быть пустым.");
             }
 
-
-            X509Certificate2 certificate = new X509Certificate2(Convert.FromBase64String(x509Certificate));
 
 
             if (ValidateCertificate(certificate))
@@ -63,6 +69,9 @@ namespace IdentityByCertificate.Controllers
                 else
                 { // Проблема в том что сейчас при обновлении пароля пользователя - он просто пересоздается. Т.е. меняется первичный ключ id, могут слететь ссылки.
                   // Но на данный момент это наиболее простой вариант. Доступа к секретам при текущей конфигурации - нет
+
+                    //_userManager
+                    
                     _configContext.Clients.Remove(existingClient);
                     var client = new Client()
                     {

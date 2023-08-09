@@ -1,5 +1,6 @@
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -23,6 +24,7 @@ namespace IdentityByCertificate
 
             // Получаем строку подключения к базе данных
             string connectionString = builder.Configuration.GetConnectionString("DefaultString");
+
 
             // Добавляем контроллеры
             builder.Services.AddControllers();
@@ -53,22 +55,30 @@ namespace IdentityByCertificate
                     options.Authority = Environment.GetEnvironmentVariable("ASPNETCORE_URLS"); // Используется текущий сервер
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
-                        ValidateAudience = false
+                        ValidateAudience = false,
+                        //SignatureValidator = 
                     };
                 });
-            
-            // Добавляем политику авторизации "AdminScope"
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("AdminScope", policy =>
-                {
-                    // Требуется аутентифицированный пользователь
-                    policy.RequireAuthenticatedUser();
 
-                    // Требуется наличие "Scope" со значением "AdminAPI"
-                    policy.RequireClaim("Scope", "AdminAPI");
-                });
-            });
+
+            //// Добавляем аутентификацию с помощью токенов JWT
+            //builder.Services.AddJwtTokenHandler();
+            builder.Services.AddAuthentication("X509").AddScheme<JwtBearerOptions, JwtBearerWithUserInfoHandler>("X509", null);
+
+
+
+            //// Добавляем политику авторизации "AdminScope"
+            //builder.Services.AddAuthorization(options =>
+            //{
+            //    options.AddPolicy("AdminScope", policy =>
+            //    {
+            //        // Требуется аутентифицированный пользователь
+            //        policy.RequireAuthenticatedUser();
+
+            //        // Требуется наличие "Scope" со значением "AdminAPI"
+            //        policy.RequireClaim("Scope", "AdminAPI");
+            //    });
+            //});
 
             // Возвращаем построенное веб-приложение
             return builder.Build();
