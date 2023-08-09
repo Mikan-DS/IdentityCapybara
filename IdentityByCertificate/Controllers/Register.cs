@@ -21,7 +21,7 @@ namespace IdentityByCertificate.Controllers
 
 
         [HttpPost]
-        public IActionResult Certificate() // Не уверен как лучше передавать сертификаты
+        public IActionResult Certificate()
         {
 
             //this.HttpContext.i
