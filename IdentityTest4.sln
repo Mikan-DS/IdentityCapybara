@@ -13,8 +13,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IdentityByCertificate", "Id
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Capicertent CLI", "Capicertent CLI\Capicertent CLI.csproj", "{08947378-3DC0-428C-9597-B8D2F1C04F52}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JWT Generator", "JWT Generator\JWT Generator.csproj", "{44F3EEB0-9553-4AA5-87C0-FD05D0E5801D}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "X509CertificateGenerator", "X509CertificateGenerator\X509CertificateGenerator.csproj", "{C6D21A6A-A821-4EB7-8574-ABF78CB99D68}"
 EndProject
 Global
@@ -43,10 +41,6 @@ Global
 		{08947378-3DC0-428C-9597-B8D2F1C04F52}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{08947378-3DC0-428C-9597-B8D2F1C04F52}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{08947378-3DC0-428C-9597-B8D2F1C04F52}.Release|Any CPU.Build.0 = Release|Any CPU
-		{44F3EEB0-9553-4AA5-87C0-FD05D0E5801D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{44F3EEB0-9553-4AA5-87C0-FD05D0E5801D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{44F3EEB0-9553-4AA5-87C0-FD05D0E5801D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{44F3EEB0-9553-4AA5-87C0-FD05D0E5801D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C6D21A6A-A821-4EB7-8574-ABF78CB99D68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C6D21A6A-A821-4EB7-8574-ABF78CB99D68}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C6D21A6A-A821-4EB7-8574-ABF78CB99D68}.Release|Any CPU.ActiveCfg = Release|Any CPU
