@@ -1,0 +1,3 @@
+[submodule "X509CertificateGenerator"]
+	path = X509CertificateGenerator
+	url = https://github.com/Mikan-DS/X509CertificateGenerator.git
