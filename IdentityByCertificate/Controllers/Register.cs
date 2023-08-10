@@ -1,7 +1,10 @@
 ﻿using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.Models;
+using IdentityByCertificate.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography.X509Certificates;
 
 namespace IdentityByCertificate.Controllers
@@ -11,12 +14,14 @@ namespace IdentityByCertificate.Controllers
     {
 
         private readonly ConfigurationDbContext _configContext;
-        private readonly PersistedGrantDbContext _grandContext; // Пока что не нашел применения
+        private readonly ApplicationDbContext _applicationDbContext;
 
-        public Register(ConfigurationDbContext configContext, PersistedGrantDbContext persistedGrantDb)
+
+        public Register(ConfigurationDbContext configContext, ApplicationDbContext applicationDbContext)
         {
             _configContext = configContext;
-            _grandContext = persistedGrantDb;
+            _applicationDbContext = applicationDbContext;
+
         }
 
 
@@ -26,7 +31,7 @@ namespace IdentityByCertificate.Controllers
 
             //this.HttpContext.i
 
-            string? clientId = this.HttpContext.Items["username"] as string;
+            string? clientId = this.HttpContext.Items["ClientId"] as string;
             X509Certificate2? certificate = this.HttpContext.Items["x509_certificate"] as X509Certificate2;
 
 
@@ -42,10 +47,10 @@ namespace IdentityByCertificate.Controllers
 
 
 
-            if (ValidateCertificate(certificate))
+            if (ValidateCertificate(certificate)) // Для доп. валидации сертификата
             {
 
-                var existingClient = _configContext.Clients.FirstOrDefault(x => x.ClientId == clientId);
+                var existingClient = _configContext.Clients.Include(c => c.ClientSecrets).FirstOrDefault(x => x.ClientId == clientId);
                 if (existingClient == null)
                 {
                     var client = new Client()
@@ -56,7 +61,7 @@ namespace IdentityByCertificate.Controllers
                     {
                         new Secret(certificate.Thumbprint.Sha256())
                     },
-                        AllowedScopes = { "CapibarAPI" }
+                        AllowedScopes = { "CapibarAPI" },
                     };
 
                     _configContext.Clients.Add(client.ToEntity());
@@ -67,32 +72,13 @@ namespace IdentityByCertificate.Controllers
 
                 }
                 else
-                { // Проблема в том что сейчас при обновлении пароля пользователя - он просто пересоздается. Т.е. меняется первичный ключ id, могут слететь ссылки.
-                  // Но на данный момент это наиболее простой вариант. Доступа к секретам при текущей конфигурации - нет
+                {
 
-                    //_userManager
-                    
-                    _configContext.Clients.Remove(existingClient);
-                    var client = new Client()
-                    {
-                        AllowedGrantTypes = GrantTypes.ClientCredentials,
-                        ClientId = clientId,
-                        ClientSecrets =
-                    {
-                        new Secret(certificate.Thumbprint.Sha256())
-                    },
-                        AllowedScopes = { "CapibarAPI" }
-                    };
+                    existingClient.ClientSecrets.First().Value = certificate.Thumbprint.Sha256();
 
-
-                    _configContext.Clients.Update(client.ToEntity());
                     _configContext.SaveChanges();
 
-
-                    // Сохранить изменения в базе данных
-                    _configContext.SaveChanges();
-
-                    return Ok($"Сертификат обновлен");
+                    return Ok($"Сертификат обновлен: " + certificate.Thumbprint);
 
                 }
 

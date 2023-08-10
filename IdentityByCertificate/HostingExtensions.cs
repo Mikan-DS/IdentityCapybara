@@ -1,7 +1,9 @@
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
+using IdentityByCertificate.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 
@@ -46,6 +48,9 @@ namespace IdentityByCertificate
                 options.ConfigureDbContext = b => b.UseSqlite(connectionString,
                     sql => sql.MigrationsAssembly(migrationsAssembly));
             });
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlite(connectionString));
+
 
             // Добавляем аутентификацию с помощью токенов JWT
             builder.Services.AddAuthentication("Bearer")

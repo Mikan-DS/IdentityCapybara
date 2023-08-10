@@ -36,26 +36,40 @@ namespace IdentityByCertificate
 
 
                 var token = TryGetBearerFromHeader(Request, out var tokenValue) ? tokenValue : null;
-
                 if (string.IsNullOrEmpty(token))
                 {
                     return AuthenticateResult.NoResult();
                 }
 
-
-
                 var tokenHandler = new JwtSecurityTokenHandler();
-                X509Certificate2 certificate;
 
-                try
-                {
-                   certificate = new X509Certificate2(Convert.FromBase64String(((JwtSecurityToken)tokenHandler.ReadToken(token)).Claims.ElementAt(1).Value));
-                }
-                catch (Exception)
-                {
+                JwtSecurityToken jwtSecurityToken = (JwtSecurityToken)tokenHandler.ReadToken(token);
 
-                    return AuthenticateResult.Fail("Неверный формат сертификата"); // ну или если совсем нет
+                X509Certificate2 certificate; // Основной сертификат
+                X509Certificate2 certificateOld; // Старый сертификат необходимый для обновления нового
+                string clientId;
+
+                JwtPayload payload = jwtSecurityToken.Payload;
+
+                if (payload["username"] != null)
+                {
+                    clientId = (string)payload["username"];
                 }
+                else
+                {
+                    return AuthenticateResult.Fail("В токене не хватает индификатора пользователя");
+                }
+
+                if (payload["X509Certificate"] != null)
+                {
+                    certificate = new X509Certificate2(Convert.FromBase64String((string)payload["X509Certificate"]));
+                }
+                else {
+                    return AuthenticateResult.Fail("В токене не хватает сертификата");
+                }
+
+                //TODO Сделать обработку старого сертификата для обновления нового
+
 
 
                 var validationParameters = new TokenValidationParameters
@@ -82,16 +96,9 @@ namespace IdentityByCertificate
                     return AuthenticateResult.Fail("Валидация токена не удалась.");
                 }
 
-                var username = claimsPrincipal.FindFirstValue("username");
-
-                if (string.IsNullOrEmpty(username))
-                {
-                    return AuthenticateResult.Fail("В токене не найдено имя пользователя.");
-                }
-
                 var ticket = new AuthenticationTicket(claimsPrincipal, Scheme.Name);
 
-                Request.HttpContext.Items["username"] = username;
+                Request.HttpContext.Items["ClientId"] = clientId;
                 Request.HttpContext.Items["x509_certificate"] = certificate;
 
                 return AuthenticateResult.Success(ticket);
