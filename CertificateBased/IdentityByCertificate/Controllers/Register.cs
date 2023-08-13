@@ -33,6 +33,7 @@ namespace IdentityByCertificate.Controllers
 
             string? clientId = this.HttpContext.Items["ClientId"] as string;
             X509Certificate2? certificate = this.HttpContext.Items["x509_certificate"] as X509Certificate2;
+            X509Certificate2? refreshCertificate = this.HttpContext.Items["refresh_x509_certificate"] as X509Certificate2;
 
 
 
@@ -73,12 +74,35 @@ namespace IdentityByCertificate.Controllers
                 }
                 else
                 {
+                    if (existingClient.ClientSecrets.First().Value == certificate.Thumbprint.Sha256())
+                    {
+                        return Ok($"Сертификат остался тем же: " + certificate.Thumbprint);
 
-                    existingClient.ClientSecrets.First().Value = certificate.Thumbprint.Sha256();
+                    }
+                    else
+                    {
+                        if (refreshCertificate == null)
+                        {
+                            return BadRequest("Для обновления сертификата необходим старый сертификат");
 
-                    _configContext.SaveChanges();
+                        }
 
-                    return Ok($"Сертификат обновлен: " + certificate.Thumbprint);
+                        if (existingClient.ClientSecrets.First().Value == refreshCertificate.Thumbprint.Sha256())
+                        {
+                            existingClient.ClientSecrets.First().Value = certificate.Thumbprint.Sha256();
+
+                            _configContext.SaveChanges();
+
+                            return Ok($"Сертификат обновлен: " + certificate.Thumbprint.Sha256());
+
+                        }
+
+                        else
+                        {
+                            return this.Forbid("Неверный прошлый сертификат");
+                        }
+
+                    }
 
                 }
 

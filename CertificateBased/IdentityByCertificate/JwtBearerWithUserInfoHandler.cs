@@ -46,21 +46,21 @@ namespace IdentityByCertificate
                 JwtSecurityToken jwtSecurityToken = (JwtSecurityToken)tokenHandler.ReadToken(token);
 
                 X509Certificate2 certificate; // Основной сертификат
-                X509Certificate2 certificateOld; // Старый сертификат необходимый для обновления нового
+                X509Certificate2? refreshCertificate = null; // Старый сертификат необходимый для обновления нового
                 string clientId;
 
                 JwtPayload payload = jwtSecurityToken.Payload;
 
-                if (payload["username"] != null)
+                if (payload.ContainsKey("ClientId"))
                 {
-                    clientId = (string)payload["username"];
+                    clientId = (string)payload["ClientId"];
                 }
                 else
                 {
                     return AuthenticateResult.Fail("В токене не хватает индификатора пользователя");
                 }
 
-                if (payload["X509Certificate"] != null)
+                if (payload.ContainsKey("X509Certificate"))
                 {
                     certificate = new X509Certificate2(Convert.FromBase64String((string)payload["X509Certificate"]));
                 }
@@ -68,8 +68,10 @@ namespace IdentityByCertificate
                     return AuthenticateResult.Fail("В токене не хватает сертификата");
                 }
 
-                //TODO Сделать обработку старого сертификата для обновления нового
-
+                if (payload.ContainsKey("RefreshX509Certificate"))
+                {
+                    refreshCertificate = new X509Certificate2(Convert.FromBase64String((string)payload["RefreshX509Certificate"]));
+                }
 
 
                 var validationParameters = new TokenValidationParameters
@@ -100,6 +102,11 @@ namespace IdentityByCertificate
 
                 Request.HttpContext.Items["ClientId"] = clientId;
                 Request.HttpContext.Items["x509_certificate"] = certificate;
+
+                if (refreshCertificate != null)
+                {
+                    Request.HttpContext.Items["refresh_x509_certificate"] = refreshCertificate;
+                }
 
                 return AuthenticateResult.Success(ticket);
             }

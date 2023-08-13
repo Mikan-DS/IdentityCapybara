@@ -1,3 +1,6 @@
-[submodule "X509CertificateGenerator"]
-	path = X509CertificateGenerator
+[submodule "Utilities/X509CertificateGenerator"]
+	path = Utilities/X509CertificateGenerator
 	url = https://github.com/Mikan-DS/X509CertificateGenerator.git
+[submodule "Utilities/JWT-Generator"]
+	path = Utilities/JWT-Generator
+	url = https://github.com/Mikan-DS/JWT-Generator.git

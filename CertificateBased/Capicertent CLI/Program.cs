@@ -1,39 +1,93 @@
-﻿
-
+﻿using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
-
-
-
 using IdentityModel.Client;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.Json;
-using System;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
 
 namespace Caplient_CLI
 {
     internal class Program
     {
         private static IConfiguration configuration = new ConfigurationBuilder()
-        .AddJsonFile(Path.GetFullPath("..\\..\\..\\appsettings.json")) //TODO изменить путь если есть необходимость
+        .AddJsonFile("appsettings.json")
         .Build();
 
-        private static X509Certificate2 certificate = new X509Certificate2("..\\..\\..\\CERT\\IdentityServer4_certificate.cer", "P@55W0RD");
+        private static X509Certificate2 certificate;// = new X509Certificate2("..\\..\\..\\CERT\\IdentityServer4_certificate.cer", "P@55W0RD");
+        private static X509Certificate2 refreshCertificate;// = new X509Certificate2("..\\..\\..\\CERT\\IdentityServer4_certificate.cer", "P@55W0RD");
 
 
         private static HttpClient client = new HttpClient() { Timeout = TimeSpan.FromMinutes(1) };
         private static string _token = string.Empty;
 
 
-        public static string clientId = "CLIClient";
+        public static string clientId;// = "CLIClient";
+        public static string password;
+        public static string jwtToken;
 
 
         static void Main(string[] args)
         {
+            Console.WriteLine("[+] Ожидание 10 попыток для запуска серверов...");
 
-            Thread.Sleep(5000); // Чтобы другие сервисы успели включиться
+
+            using (TcpClient client = new TcpClient())
+            {
+                for (int i = 1; i < 11; i++)
+                {
+                    //Thread.Sleep(1000); // Чтобы другие сервисы успели включиться
+                    Console.WriteLine("[?] Попытка #" + i);
+                    try
+                    {
+                        client.Connect("localhost", int.Parse(configuration.GetValue<string>("IdentitiServerUrl").Split(":").Last()));
+                        Console.WriteLine("[+] Удачно!");
+                        break;
+
+                    }
+                    catch (Exception)
+                    {
+
+                        Console.WriteLine("[-] ...");
+
+                    }
+
+                }
+
+            }
+            Console.WriteLine("[?] Инициализация...");
+
+
+            string dir = "CERT";
+            clientId = configuration.GetValue<string>("ClientId");
+            password = configuration.GetValue<string>("Password");
+
+            string filenameRefreshCertificate = configuration.GetValue<string>("RefreshCertificateFilename");
+            string filenameCertificate = configuration.GetValue<string>("CertificateFilename");
+
+            Console.WriteLine($"[+] Получены следующие даннные:\nCli\t{clientId}\nCert\t{filenameCertificate}");
+
+            if(!File.Exists(Path.Combine(dir, filenameCertificate + ".cer")))
+            {
+                X509CertificateGenerator.Generator.MakeCertificate(dir, clientId, password, 1, filenameCertificate);
+                //X509CertificateGenerator.Generator.MakeDifferentCertificate(dir, clientId, password, filenameCertificate);
+
+            }
+
+            certificate = new X509Certificate2(Path.Combine(dir, filenameCertificate + ".pfx"), password);
+
+            if (!String.IsNullOrEmpty(filenameRefreshCertificate))
+            {
+                refreshCertificate = new X509Certificate2(Path.Combine(dir, filenameRefreshCertificate + ".cer"));
+            }
+
+            jwtToken = JWT_Generator_Library.Generator.CreateToken(certificate, clientId, refreshCertificate);
+
+            Console.WriteLine($"[+] JWT для получения токена: \n  {jwtToken}");
+
+            certificate = new X509Certificate2(Path.Combine(dir, filenameCertificate + ".cer"));
+
+
+            Console.WriteLine("[+] Инициализация завершена");
+
 
             CapibaraMain().Wait();
 
@@ -57,10 +111,17 @@ namespace Caplient_CLI
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, apiUrl);
 
 
-            // Добавляем заголовок (header) к запросу
+            //// Добавляем заголовок (header) к запросу
 
-            request.Headers.Add("ClientId", clientId);
-            request.Headers.Add("x509Certificate", Convert.ToBase64String(certificate.RawData));
+            //request.Headers.Add("ClientId", clientId);
+            //request.Headers.Add("x509Certificate", Convert.ToBase64String(certificate.RawData));
+
+            //if (refreshCertificate != null)
+            //{
+            //    request.Headers.Add("RefreshX509Certificate", Convert.ToBase64String(certificate.RawData));
+            //}
+
+            request.SetBearerToken(jwtToken);
 
 
             try

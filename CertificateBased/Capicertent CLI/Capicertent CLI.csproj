@@ -15,4 +15,15 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Utilities\JWT-Generator\JWT Generator Library\JWT Generator Library.csproj" />
+    <ProjectReference Include="..\..\Utilities\X509CertificateGenerator\X509CertificateGenerator.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
